@@ -1,10 +1,10 @@
 import os
-
 import json
-from torchvision.io import read_image
-from torch.utils.data import Dataset
 
-class ZeroShotDataset(Dataset):
+import numpy as np
+from PIL import Image
+
+class Dataset():
     def __init__(self, annotations_path, img_dir, transform=None, target_transform=None):
         f = open(annotations_path)
         self.annotations = json.load(f)
@@ -23,7 +23,8 @@ class ZeroShotDataset(Dataset):
         samples = []
         for elem in elems:
             img_path = os.path.join(self.img_dir, elem['file_name'])
-            image = read_image(img_path)
+            image = Image.open(img_path)
+            image = np.array(image)
             image_id = elem['id']
 
             if self.transform:
