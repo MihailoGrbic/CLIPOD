@@ -1,0 +1,16 @@
+Strategije ispitivanja bboxa
+Secenje
+Zacrnjavanje
+
+Strategije konstrukcije upitnih recenica
+Negativna rec (background, other, clutter...)
+Negativne klase
+Druge pozitivne klase
+
+
+Strategije nalazenja bboxeva
+Random
+Random + pretraga
+
+
+
