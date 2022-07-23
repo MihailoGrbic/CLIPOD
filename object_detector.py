@@ -37,13 +37,8 @@ class CLIPObjectDetector:
     def _generate_random_bboxes(self, img_width, img_height, num):
         lefts = np.random.uniform(0, img_width - MIN_BBOX_DIM, num).astype(int)
         tops = np.random.uniform(0, img_height - MIN_BBOX_DIM, num).astype(int)
-        widths = np.zeros(num)
-        heights = np.zeros(num)
-        for i, (left, top) in enumerate(zip(lefts, tops)):
-            widths[i] = np.random.uniform(MIN_BBOX_DIM, img_width - left)
-            heights[i] = np.random.uniform(MIN_BBOX_DIM, img_height - top)
-        rights = lefts + widths
-        downs = tops + heights
+        rights = np.random.uniform(lefts + MIN_BBOX_DIM, img_width, num).astype(int)
+        downs = np.random.uniform(tops + MIN_BBOX_DIM, img_height, num).astype(int)
 
         return np.stack([lefts, tops, rights, downs], axis=-1).astype(int)
 

@@ -13,4 +13,7 @@ Random
 Random + pretraga
 
 
+self.processor takes bulk of the time
+
+
 
