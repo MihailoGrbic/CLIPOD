@@ -15,6 +15,7 @@ class Dataset():
     def __len__(self):
         return len(self.annotations['images'])
 
+    #TODO add random shuffle
     def __getitem__(self, idx):
         elems = self.annotations['images'][idx]
         if not isinstance(elems, list):
@@ -24,7 +25,6 @@ class Dataset():
         for elem in elems:
             img_path = os.path.join(self.img_dir, elem['file_name'])
             image = Image.open(img_path)
-            image = np.array(image)
             image_id = elem['id']
 
             if self.transform:

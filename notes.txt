@@ -1,3 +1,7 @@
+Strategije inicijalne detekcije
+drugaciji tekstovi
+deljenje na delove
+
 Strategije ispitivanja bboxa
 Secenje
 Zacrnjavanje

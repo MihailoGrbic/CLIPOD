@@ -1,38 +1,80 @@
 import random
 
 import numpy as np
-import torch
 from transformers import CLIPProcessor, CLIPModel
 from tqdm import tqdm
 
-INIT_THRESHOLD = 1e-3
+from object_detector_config import CLIPObjectDetectorConfig
+
 MIN_BBOX_DIM = 10
 random.seed(3141592)
 np.random.seed(3141592)
 
 class CLIPObjectDetector:
-    def __init__(self, model_name, device="cpu", batch_size=8):
+    def __init__(self, model_name, config_path=None, config={}):
         self.model = CLIPModel.from_pretrained(model_name)
         self.processor = CLIPProcessor.from_pretrained(model_name)
-        self.device = device
-        self.batch_size = batch_size
 
-        self.model.to(device).eval()
+        if config_path is not None:
+            self.config = CLIPObjectDetectorConfig.from_file(config_path)
+        else:
+            self.config = CLIPObjectDetectorConfig(config)
+
+        self.model.to(self.config.device).eval()
 
     def _get_probs(self, texts, images):
-        inputs = self.processor(text=texts, images=images, return_tensors="pt", padding=True)
+        probs = np.zeros((len(images), len(texts)))
 
-        # Move inputs to GPU
-        for key, val in inputs.items():
-            inputs[key] = val.to(self.device)
+        # Iterate through images in batches
+        for i in range(0, len(images), self.config.batch_size):
+            image_batch = images[i : i+self.config.batch_size]
+            inputs = self.processor(text=texts, images=image_batch, return_tensors="pt", padding=True)
 
-        outputs = self.model(**inputs)
+            # Move inputs to GPU
+            for key, val in inputs.items():
+                inputs[key] = val.to(self.device)
 
-        logits_per_image = outputs.logits_per_image
-        probs = logits_per_image.softmax(dim=1)
-        probs = probs.cpu().numpy()
+            outputs = self.model(**inputs)
+
+            logits_per_image = outputs.logits_per_image
+            batch_probs = logits_per_image.softmax(dim=1)
+            batch_probs = batch_probs.cpu().numpy()
+
+            probs[i : i+self.config.batch_size, :] = batch_probs
 
         return probs
+
+    def init_detection(self, image, cat_names):
+        w, h = image.size
+
+        image_prompts = [image]
+
+        if self.config.init_strat == 'segments':
+            segments = self.config.num_segments
+            w_seg = int (w / segments)
+            h_seg = int (h / segments)
+
+            for i in range(segments):
+                for j in range(segments):
+                    left, right = w_seg * i, w_seg * (i + 1)
+                    top, bottom = h_seg * j, h_seg * (j + 1)
+
+                    cropped_image = image.crop((left, top, right, bottom))
+                    image_prompts.append(cropped_image)
+
+        text_prompts = ["A photo of a " + cat for cat in cat_names]
+        init_probs = self._get_probs(text_prompts, image_prompts)
+        init_probs = np.amax(init_probs, axis=0)
+
+        promising_cats = []
+        negative_cats = []
+        for i, cat_name in enumerate(cat_names):
+            if init_probs[i] > self.config.threshold:
+                promising_cats.append(cat_name)
+            else:
+                negative_cats.append(cat_name)
+
+        return promising_cats, negative_cats
 
     def _generate_random_bboxes(self, img_width, img_height, num):
         lefts = np.random.uniform(0, img_width - MIN_BBOX_DIM, num).astype(int)
@@ -46,22 +88,23 @@ class CLIPObjectDetector:
         left, top, right, down = bbox[0], bbox[1], bbox[2], bbox[3]
 
         if self.crop:
-            proc_image = image[top:down, left:right, :]
+            proc_image = image.crop((left, top, right, down))
         else:
-            proc_image = np.copy(image)
-            proc_image[:top, :, :] = 0
-            proc_image[top:down, :left, :] = 0
-            proc_image[top:down, right:, :] = 0
-            proc_image[down:, :, :] = 0
+            pixels = image.load()
+
+            pixels[:top, :] = (0, 0, 0)
+            pixels[top:down, :left] = (0, 0, 0)
+            pixels[top:down, right:] = (0, 0, 0)
+            pixels[down:, :] = (0, 0, 0)
 
         return proc_image
 
     def _random_detect(self, image, text_prompt, num_tries):
-        img_height, img_width, _ = image.shape
-        bboxes = self._generate_random_bboxes(img_width, img_height, num_tries)
+        bboxes = self._generate_random_bboxes(image.width, image.height, num_tries)
 
         confidence_scores = np.zeros(num_tries)
 
+        #TODO remove this
         # Iterate through bboxes in batches
         for i in range(0, num_tries, self.batch_size):
             bbox_batch = bboxes[i:i+self.batch_size]
@@ -82,22 +125,12 @@ class CLIPObjectDetector:
         
         return detections
 
-    def detect(self, image, cat_names, text_strat="one-negative", bbox_strat="random", crop=True,
-            negative_text="background", num_other_cats=10, num_tries=100):
+    def detect(self, image, cat_names):
 
         self.crop = crop
 
         # Initial class filtering
-        init_probs = self._get_probs(cat_names, image)
-
-        promising_cats = []
-        negative_cats = []
-        for i, cat_name in enumerate(cat_names):
-            if init_probs[0, i] > INIT_THRESHOLD:
-                promising_cats.append(cat_name)
-            else:
-                negative_cats.append(cat_name)
-
+        pass
 
         all_detections = []
         # Loop through all categories that may be present on the image
