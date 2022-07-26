@@ -1,12 +1,12 @@
 import json
 
 class CLIPObjectDetectorConfig:
-    def __init__(self, **config_dict):
+    def __init__(self, config_dict):
         # Fill the config with default values
         self.device = 'cpu'
         self.batch_size = 8
 
-        self.init_strat = 'segments'
+        self.init_strat = 'segments'                # single or segments
         self.num_segments = 5
         self.repeat_wo_best = False
         self.init_threshold = 1e-1
@@ -18,6 +18,8 @@ class CLIPObjectDetectorConfig:
         self.bbox_strat = 'random'
         self.crop=True
         self.num_tries=100
+
+        self.text_query_prepend = "A photo of a"
         
         # Fill with values from 
         self.__dict__.update(config_dict)

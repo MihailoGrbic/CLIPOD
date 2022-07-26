@@ -22,10 +22,10 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 if __name__ == "__main__":
 
     # Load the pretrained model
-    model = CLIPModel.from_pretrained("openai/clip-vit-large-patch14-336")
-    processor = CLIPProcessor.from_pretrained("openai/clip-vit-large-patch14-336")
-    # model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
-    # processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+    # model = CLIPModel.from_pretrained("openai/clip-vit-large-patch14-336")
+    # processor = CLIPProcessor.from_pretrained("openai/clip-vit-large-patch14-336")
+    model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+    processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
     model.to(device).eval()
 
     # Load the annotations and COCO API object
@@ -50,7 +50,7 @@ if __name__ == "__main__":
             #image = image.crop((200, 200, 300, 300))  #21
             #image = image.crop((270, 280, 425, 427))  #10
             #image = image.crop((315, 280, 370, 427))  #10
-            image = image.crop((370, 70, 480, 350))  #3
+            #image = image.crop((370, 70, 480, 350))  #3
 
             # image = image.crop((2*w/3, h/3, 3 * w/3, 2*h/3))
             #image = image.crop((w/3, 2*h/3, 2 * w/3, 3*h/3))
