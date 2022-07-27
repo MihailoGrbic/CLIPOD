@@ -18,15 +18,14 @@ if __name__ == "__main__":
     obj_counts = []
     unique_obj_counts = []
     for img_id in img_ids:
-        ann_ids = coco.getAnnIds(imgIds=img_id)
-        
+        label_ids = coco.getAnnIds(imgIds=img_id)
+        labels = coco.loadAnns(label_ids)
 
-        anns = coco.loadAnns(ann_ids)
         cats_present = set()
-        for ann in anns:
-            cats_present.add(ann['category_id'])
+        for label in labels:
+            cats_present.add(label['category_id'])
         unique_obj_counts.append(len(cats_present))
-        obj_counts.append(len(ann_ids))
+        obj_counts.append(len(label_ids))
         
 
     avg_objs = sum(obj_counts) / len(obj_counts)

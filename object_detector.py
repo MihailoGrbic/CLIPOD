@@ -11,9 +11,10 @@ random.seed(3141592)
 np.random.seed(3141592)
 
 class CLIPObjectDetector:
-    def __init__(self, model_name, config={}):
+    def __init__(self, model_name, device='cpu', config={}):
         self.model = CLIPModel.from_pretrained(model_name)
         self.processor = CLIPProcessor.from_pretrained(model_name)
+        self.device = device
 
         if isinstance(config, str):
             self.config = CLIPObjectDetectorConfig.from_file(config_path)
@@ -24,7 +25,7 @@ class CLIPObjectDetector:
         else:
             raise ValueError(f"Unknown object type for config")
 
-        self.model.to(self.config.device).eval()
+        self.model.to(self.device).eval()
 
     def _get_probs(self, texts, images):
         probs = np.zeros((len(images), len(texts)))
@@ -36,7 +37,7 @@ class CLIPObjectDetector:
 
             # Move inputs to GPU
             for key, val in inputs.items():
-                inputs[key] = val.to(self.config.device)
+                inputs[key] = val.to(self.device)
 
             outputs = self.model(**inputs)
 
@@ -48,12 +49,12 @@ class CLIPObjectDetector:
 
         return probs
 
-    def init_detection(self, image, cat_names):
+    def init_detection(self, image, cat_names, return_probs=False):
         w, h = image.size
 
         image_query = [image]
         if self.config.init_strat == 'segments':
-            for curr_segments in range(2, self.config.num_segments):
+            for curr_segments in range(2, self.config.init_settings.num_segments + 1):
                 w_seg = int (w / curr_segments)
                 h_seg = int (h / curr_segments)
 
@@ -65,28 +66,35 @@ class CLIPObjectDetector:
                         cropped_image = image.crop((left, top, right, bottom))
                         image_query.append(cropped_image)
 
-        leftover_cats = set(cat_names)
-        promising_cats = set()
-        while True:
-            text_query = [self.config.text_query_prepend + cat for cat in leftover_cats]
+        leftover_cats = cat_names.copy()
+        promising_cats = []
+        text_query = [self.config.text_query_prepend + cat for cat in leftover_cats]
+        init_probs = self._get_probs(text_query, image_query)
+        probs = init_probs.copy()
+        
+        for step in range(self.config.init_settings.max_repeat_steps):
+            probs_max = np.amax(probs, axis=0)
+            to_delete = []
+            leftover_len = len(leftover_cats)
+            for i in range(leftover_len-1, -1, -1):
+                if probs_max[i] > self.config.init_settings.threshold:
+                    promising_cats.append(leftover_cats.pop(i))
+                    to_delete.append(i)
 
-            init_probs = self._get_probs(text_query, image_query)
-            init_probs = np.amax(init_probs, axis=0)
-
-            for i, cat_name in enumerate(leftover_cats):
-                if init_probs[i] > self.config.init_threshold:
-                    promising_cats.add(cat_name)
-
-            prev_leftover = leftover_cats.copy()
-            leftover_cats = leftover_cats.difference(promising_cats)
-
-            if not self.config.repeat_wo_best or prev_leftover==leftover_cats:
+            if not self.config.init_settings.repeat_wo_best or len(to_delete)==0:
                 break
 
-        # Fill the negative categories list with all the leftover categories
+            # Remove probs that correspond to detected classes
+            probs = np.delete(probs, to_delete, axis=1)
+            # Normalize the probs to sum up to 1
+            probs = np.divide(probs.T, np.sum(probs, axis=1)).T
+
+
         negative_cats = leftover_cats
 
-        return list(promising_cats), list(negative_cats)
+        if return_probs:
+            return promising_cats, negative_cats, init_probs
+        return promising_cats, negative_cats
 
     def _generate_random_bboxes(self, img_width, img_height, num):
         lefts = np.random.uniform(0, img_width - MIN_BBOX_DIM, num).astype(int)

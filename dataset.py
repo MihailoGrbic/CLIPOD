@@ -1,37 +1,44 @@
 import os
-import json
 
+from pycocotools.coco import COCO
 import numpy as np
 from PIL import Image
 
-class Dataset():
-    def __init__(self, annotations_path, img_dir, transform=None, target_transform=None):
-        f = open(annotations_path)
-        self.annotations = json.load(f)
+from util import get_id_cat_map
+
+class COCODataset():
+    def __init__(self, annotations_path, img_dir):
+        self.coco = COCO(annotations_path)
+        self.image_infos = self.coco.loadImgs(self.coco.getImgIds())
+        self.cats = self.coco.loadCats(self.coco.getCatIds())
+        self.id_cat_map = get_id_cat_map(self.cats)
+
         self.img_dir = img_dir
-        self.transform = transform
-        self.target_transform = target_transform
+
+    def getCats(self):
+        return self.cats
 
     def __len__(self):
-        return len(self.annotations['images'])
+        return len(self.image_infos)
 
-    #TODO add random shuffle
     def __getitem__(self, idx):
-        elems = self.annotations['images'][idx]
-        if not isinstance(elems, list):
-            elems = [elems]
+        image_info_slice = self.image_infos[idx]
+        if not isinstance(image_info_slice, list):
+            image_info_slice = [image_info_slice]
         
         samples = []
-        for elem in elems:
-            img_path = os.path.join(self.img_dir, elem['file_name'])
+        for image_info in image_info_slice:
+            img_path = os.path.join(self.img_dir, image_info['file_name'])
             image = Image.open(img_path)
-            image_id = elem['id']
+            
+            label_ids = self.coco.getAnnIds(image_info['id'])
+            labels = self.coco.loadAnns(label_ids)
+            
+            # Add category name to every label dict
+            for label in labels:
+                label['category_name'] = self.id_cat_map[label['category_id']]
 
-            if self.transform:
-                image = self.transform(image)
-            if self.target_transform:
-                label = self.target_transform(label)
-            sample = {'image' : image, 'id' : image_id}
+            sample = {'image' : image, 'image_info' : image_info, 'labels' : labels}
             samples.append(sample)
             
         return samples

@@ -41,7 +41,7 @@ if __name__ == "__main__":
             image, image_id = elem["image"], elem["id"]
 
             detections = detector.detect(image, cat_names)
-
+            
             print(detections)
             # plt.imshow(image)
             # plt.show()

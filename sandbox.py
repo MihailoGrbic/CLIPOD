@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 from transformers import CLIPProcessor, CLIPModel
 from tqdm import tqdm
 
-from dataset import Dataset
+from dataset import COCODataset
 
 def get_cat_id_map(cats):
     result = {}
@@ -31,20 +31,22 @@ if __name__ == "__main__":
     # Load the annotations and COCO API object
     ann_path = '{}\\annotations\\instances_{}.json'.format(dataset_path, val_dir)
     val_img_dir = '{}\\{}\\'.format(dataset_path, val_dir)
-    coco = COCO(ann_path)
 
-    cats = coco.loadCats(coco.getCatIds())
+    val_dataset = COCODataset(ann_path, val_img_dir)
+
+    cats = val_dataset.getCats()
     cat_map = get_cat_id_map(cats)
-    #cat_names = [cat['name'] for cat in cats]
-    cat_names = ["a photo of a " + cat['name'] for cat in cats]
 
-    val_dataset = Dataset(ann_path, val_img_dir)
+    #cat_names = [cat['name'] for cat in cats]
+    cat_names = ["A photo of a " + cat['name'] for cat in cats]
+
+
 
     with torch.no_grad():
         # for elem in tqdm(val_dataset[:40]):
-        for elem in tqdm(val_dataset[0]):
+        for elem in tqdm(val_dataset[3]):
             #3, 10, 11, 21
-            image, image_id = elem["image"], elem["id"]
+            image, labels = elem["image"], elem["labels"]
 
             w, h = image.size
             #image = image.crop((200, 200, 300, 300))  #21

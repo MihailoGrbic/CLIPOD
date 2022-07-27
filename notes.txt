@@ -1,6 +1,6 @@
 Strategije inicijalne detekcije
-drugaciji tekstovi
 deljenje na delove
+izbacivanje vec nadjenih
 
 Strategije ispitivanja bboxa
 Secenje
@@ -15,9 +15,33 @@ Druge pozitivne klase
 Strategije nalazenja bboxeva
 Random
 Random + pretraga
+segmentacija + spajanje
 
-
+GENERAL NOTEX
 self.processor takes bulk of the time
+
+DICTS
+img = coco.loadImgs(img_id)
+'file_name'
+'height'
+'width'
+'date_captured'
+'id'
+...itd
+
+anns = coco.loadAnns(annIds)
+'segmentation'
+'area'
+'iscrowd'
+'image_id'
+'bbox'
+'category_id'
+'id'
+
+
+
+
+
 
 
 
