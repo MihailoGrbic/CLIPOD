@@ -2,12 +2,22 @@ from PIL import Image
 
 from transformers import CLIPProcessor, CLIPModel
 
-model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
-processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+model_name = "openai/clip-vit-base-patch32"
+# model_name = "openai/clip-vit-large-patch14"
+#model_name = "openai/clip-vit-large-patch14-336"
+model = CLIPModel.from_pretrained(model_name)
+processor = CLIPProcessor.from_pretrained(model_name)
 
-image = Image.open("dog.jpg")
+#image = Image.open("img/dog-cat-bird.jpg")
+image = Image.open("img/not_a_car.jpg")
+# image = Image.open("img/cat.jpg")
+# image = Image.open("img/dog.jpg")
+# image = Image.open("img/bird.jpg")
 
-inputs = processor(text=["a photo of a cat", "a photo of a dog"], images=image, return_tensors="pt", padding=True)
+# inputs = processor(text=["a photo of a cat", "a photo of a dog", "a photo of a bird"],
+#                    images=image, return_tensors="pt", padding=True)
+inputs = processor(text=["a photo of a bicycle", "a photo of a car"],
+                   images=image, return_tensors="pt", padding=True)
 
 outputs = model(**inputs)
 

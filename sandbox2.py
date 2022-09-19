@@ -81,11 +81,10 @@ if __name__ == "__main__":
 
             # 4 bycicle
             # image = image.crop((274, 232, 438, 307))  # with promising cats 0.9961785078048706
-            # image = image.crop((16, 57, 640, 327))  # all cats 0.9889393
+            image = image.crop((16, 57, 640, 327))  # all cats 0.9889393
             
-            # image = image.crop((200, 0, 500, 350))  # ideal 0.97616   promising 0.9808
-            image = image.crop((200, 120, 500, 350))  # ideal2  promising 0.9808
-
+            # image = image.crop((200, 0, 500, 350))  # ideal 0.97616
+            
             # image = image.crop((186, 16, 338, 83))  #4 bycicle
             # image = image.crop((141, 26, 323, 178))  #4 bycicle
             # image = image.crop((190, 0, 500, 350))  #4 bycicle 9.7443e-01
@@ -93,9 +92,9 @@ if __name__ == "__main__":
             # whole image bycicle 9.6786e-01
 
             # promising cats
-            cat_names = ['skateboard', 'parking meter', 'motorcycle', 'bicycle', 'hair drier', 'bird', 'bench',
-                         'fire hydrant', 'traffic light', 'car', 'mouse', 'dog', 'stop sign', 'person']
-            cat_names = ["A photo of a " + cat for cat in cat_names]
+            # cat_names = ['skateboard', 'parking meter', 'motorcycle', 'bicycle', 'hair drier', 'bird', 'bench',
+            #              'fire hydrant', 'traffic light', 'car', 'mouse', 'dog', 'stop sign', 'person']
+            # cat_names = ["A photo of a " + cat for cat in cat_names]
 
             # negative text
             # cat_names = ['a photo of a bench']
@@ -126,15 +125,17 @@ if __name__ == "__main__":
             probs, cat_names = (list(t) for t in zip(*sorted(zip(probs, cat_names))))
             for i, name in enumerate(cat_names):
                 print(name + "  " + str(probs[i]))
-            
-            fig, ax = plt.subplots()
-            ax.imshow(image)
-            plt.gca().set_axis_off()
-            plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0, 
-                        hspace = 0, wspace = 0)
-            plt.margins(0,0)
+
+            # image = torch.moveaxis(image, 0, -1).cpu().numpy()
+            plt.subplot(1,3,1)
+            plt.imshow(image)
+            plt.subplot(1,3,2)
+            plt.imshow(image2)
+            plt.subplot(1,3,3)
+            dif = np.array(image, dtype=float) - np.array(image2, dtype=float)
+            dif = (dif - dif.min()) / (dif.max() - dif.min())
+            plt.imshow(dif)
             plt.show()
-            fig.savefig(f'results/images/ideal2', bbox_inches='tight', pad_inches=0)
             # image = image.save("examples/img/not_a_car.jpg")
 
             # plt.imshow(image2)

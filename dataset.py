@@ -23,7 +23,7 @@ class COCODataset():
 
     def __getitem__(self, idx):
         image_info_slice = self.image_infos[idx]
-        if not isinstance(image_info_slice, list):
+        if isinstance(idx, int):
             image_info_slice = [image_info_slice]
         
         samples = []
@@ -40,5 +40,11 @@ class COCODataset():
 
             sample = {'image' : image, 'image_info' : image_info, 'labels' : labels}
             samples.append(sample)
-            
+        
+        if isinstance(idx, int): return samples[0]
         return samples
+
+    def get_by_id(self, img_id):
+        for i, info in enumerate(self.image_infos):
+            if info['id'] == img_id:
+                return self.__getitem__(i)

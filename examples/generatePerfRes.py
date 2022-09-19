@@ -5,7 +5,7 @@ import json
 #initialize COCO ground truth api
 dataDir='C:\\datasets\\COCO'
 dataType='val2017'
-annFile='{}\\annotations\\instances_{}.json'.format(dataDir,dataType)
+annFile=f'{dataDir}\\annotations\\instances_{dataType}.json'
 coco=COCO(annFile)
 
 annIds = coco.getAnnIds()
