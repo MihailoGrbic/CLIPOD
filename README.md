@@ -1,4 +1,4 @@
-# Zero-shot object detection using a pre-trained CLIP model
+# Zero-shot object detection using the pretrained CLIP model
 
 Repository for my Bachelor's thesis.
 
